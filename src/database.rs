@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::prelude::*;
 
@@ -109,6 +110,15 @@ impl DB {
             self.db.insert(t);
         }
     }
+
+    pub fn add_file(&mut self, file : String) {
+        for tf in self.db.iter() {
+            if tf.get_path() == file {
+                return;
+            }
+        }
+        self.db.insert(TaggedFile::new(file, BTreeSet::new()));
+    }   
         
 
 }
