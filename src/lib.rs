@@ -1,6 +1,6 @@
 pub mod tags;
-pub mod file;
-mod query;
+mod file;
+pub mod query;
 pub mod database;
 
 #[cfg(test)]
