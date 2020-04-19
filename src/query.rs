@@ -11,6 +11,7 @@ pub enum Query {
 
 
 impl Query {
+    /// Constructs a Query of given kind.
     pub fn eq_c(t : Tag) -> Self {
         Query::Eq(t)
     }

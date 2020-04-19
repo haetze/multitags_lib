@@ -11,6 +11,7 @@ use serde::{Serialize, Deserialize};
 
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
+/// Representation of the Tag-Database at runtime.
 pub struct DB {
     file : String,
     db : HashSet<TaggedFile>,
@@ -18,13 +19,14 @@ pub struct DB {
 
 
 impl DB {
+    /// Creates a new database from the location string.
     pub fn init(file : String) -> Self {
         DB {
             file : file,
             db : HashSet::new(),
         }
     }
-
+    /// Reads a database at `file`.
     pub fn read_db(file : String) -> std::io::Result<Self> {
         let mut file = File::open(file)?;
         let mut contents = String::new();
@@ -33,6 +35,7 @@ impl DB {
         Ok(s)
     }
 
+    /// Writes the database to `self.file`.
     pub fn dump_db(&self) -> std::io::Result<()> {
         let mut f = File::create(self.file.clone())?;
         let s = serde_json::to_string(self)?;
@@ -40,6 +43,8 @@ impl DB {
         Ok(())
     }
 
+    /// Tries to match `query` with every TaggedFile.
+    /// Returns all paths for files that positively match with the query.
     pub fn match_query(&self, query : &Query) -> HashSet<String> {
         let mut set = HashSet::new();
         for tf in self.db.iter() {
@@ -50,6 +55,7 @@ impl DB {
         return set;
     }
 
+    /// Removes TaggedFiles that match `query`.
     pub fn remove_matching(&mut self, query: &Query) {
         let mut s : HashSet<TaggedFile>= HashSet::new();
         
@@ -64,6 +70,8 @@ impl DB {
         }
     }
 
+    /// Removes Tags for each TaggedFile.
+    /// Removed Tags match `query` positively.
     pub fn remove_matching_tags(&mut self, query: &Query) {
         let s = self.db.clone();
         for ts in s {
@@ -73,6 +81,8 @@ impl DB {
         }
     }
 
+    /// Removes Tags for `file`.
+    /// Removed Tags match `query` positively.
     pub fn remove_matching_tags_for_file(&mut self, file : &String, query : &Query) {
      let s = self.db.clone();
         for ts in s {
@@ -84,6 +94,7 @@ impl DB {
         }
     }
 
+    /// Adds `tag` to each TaggedFile that matches `query`.
     pub fn add_tag_matching(&mut self, query : &Query, tag : &Tag) {
         let mut s : HashSet<TaggedFile>= HashSet::new();
         
@@ -100,6 +111,7 @@ impl DB {
         }
     }
 
+    /// Adds `tag` to `file.`
     pub fn add_tag_to_file(&mut self, file : String, tag : &Tag) {
         let s = self.db.clone();
         for tf in s {
@@ -111,6 +123,7 @@ impl DB {
         }
     }
 
+    /// Adds `file` with an empty Tag-Set.
     pub fn add_file(&mut self, file : String) {
         for tf in self.db.iter() {
             if tf.get_path() == file {

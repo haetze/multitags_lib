@@ -2,6 +2,7 @@ use serde::{Serialize, Deserialize};
 use super::query::Query;
 
 #[derive(Serialize, Deserialize,Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// Types that can be part of a Tag.
 pub enum TagType {
     Date(u32,u32,u32),
     Number(i32),
@@ -9,19 +10,15 @@ pub enum TagType {
 }
 
 impl TagType {
-    pub fn date(day : u32, month : u32, year : u32) -> Self {
+    fn date(day : u32, month : u32, year : u32) -> Self {
         TagType::Date(day, month, year)
     }
 
-    pub fn number(n : i32) -> Self {
+    fn number(n : i32) -> Self {
         TagType::Number(n)
     }
 
-    pub fn str(s : String) -> Self {
-        TagType::Str(s)
-    }
-
-    pub fn date_from_str(s : &mut String) -> Option<Self> {
+    fn date_from_str(s : &mut String) -> Option<Self> {
         match s.clone().chars().collect::<Vec<char>>()[..] {
             [d1,d2,'-',m1,m2,'-',y1,y2,y3,y4,':',..] => {
                 let d1 = d1.to_digit(10)?;
@@ -53,7 +50,7 @@ impl TagType {
         }
     }
 
-    pub fn number_from_str(s : &mut String) -> Option<Self> {
+    fn number_from_str(s : &mut String) -> Option<Self> {
         match s.find(':') {
             None => None,
             Some(n) => {
@@ -71,16 +68,22 @@ impl TagType {
 }
 
 #[derive(Serialize, Deserialize,Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// Stores a Tag.
 pub enum Tag {
     Nil,
     Cons(TagType, Box<Tag>),
 }
 
 impl Tag {
+    /// Creates a new empty Tag.
     pub fn new() -> Self {
         Tag::Nil
     }
 
+    /// Creates a Tag from its String representation.
+    /// ```
+    /// Tag::from_str("1000:12-04-2020:string").unwrap();
+    /// ```
     pub fn from_str(s : &mut String) -> Option<Self> {
         let mut tags : Vec<TagType> = Vec::new();
         loop {
@@ -118,10 +121,11 @@ impl Tag {
     }
 
         
-    pub fn append(self, t : TagType) -> Self {
+    fn append(self, t : TagType) -> Self {
         Tag::Cons(t, Box::new(self))
     }
 
+    /// Matches `query` with a Tag. 
     pub fn match_query(&self, query : &Query) -> bool {
         use Query::*;
         match query {
@@ -134,7 +138,7 @@ impl Tag {
         }
     }
 
-    pub fn contains(&self, t : &Tag) -> bool {
+    fn contains(&self, t : &Tag) -> bool {
         use Tag::*;
         match (self, t) {
             (_, Nil) => true,
@@ -142,7 +146,7 @@ impl Tag {
             _ => false,
         }
     }
-    pub fn begins_with(&self, t : &Tag) -> bool {
+    fn begins_with(&self, t : &Tag) -> bool {
         use Tag::*;
         match (self, t) {
             (_, Nil) => true,
@@ -150,7 +154,7 @@ impl Tag {
             _ => false,
         }
     }
-    pub fn ends_in(&self, t : &Tag) -> bool {
+    fn ends_in(&self, t : &Tag) -> bool {
         use Tag::*;
         match (self, t) {
             (_, Nil) => true,
