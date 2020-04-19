@@ -1,4 +1,4 @@
-mod tags;
+pub mod tags;
 pub mod file;
 mod query;
 pub mod database;
