@@ -10,15 +10,19 @@ pub enum TagType {
 }
 
 impl TagType {
-    fn date(day : u32, month : u32, year : u32) -> Self {
+    pub fn date(day : u32, month : u32, year : u32) -> Self {
         TagType::Date(day, month, year)
     }
 
-    fn number(n : i32) -> Self {
+    pub fn number(n : i32) -> Self {
         TagType::Number(n)
     }
 
-    fn date_from_str(s : &mut String) -> Option<Self> {
+    pub fn str(s : String) -> Self {
+        TagType::Str(s)
+    }
+
+    pub fn date_from_str(s : &mut String) -> Option<Self> {
         match s.clone().chars().collect::<Vec<char>>()[..] {
             [d1,d2,'-',m1,m2,'-',y1,y2,y3,y4,':',..] => {
                 let d1 = d1.to_digit(10)?;
@@ -50,7 +54,7 @@ impl TagType {
         }
     }
 
-    fn number_from_str(s : &mut String) -> Option<Self> {
+    pub fn number_from_str(s : &mut String) -> Option<Self> {
         match s.find(':') {
             None => None,
             Some(n) => {
@@ -82,7 +86,9 @@ impl Tag {
 
     /// Creates a Tag from its String representation.
     /// ```
-    /// Tag::from_str("1000:12-04-2020:string").unwrap();
+    /// use multitags_lib::tags::*;
+    /// let mut tag_string = "1000:12-04-2020:string".to_string();
+    /// Tag::from_str(&mut tag_string).unwrap();
     /// ```
     pub fn from_str(s : &mut String) -> Option<Self> {
         let mut tags : Vec<TagType> = Vec::new();
@@ -121,7 +127,7 @@ impl Tag {
     }
 
         
-    fn append(self, t : TagType) -> Self {
+    pub fn append(self, t : TagType) -> Self {
         Tag::Cons(t, Box::new(self))
     }
 
