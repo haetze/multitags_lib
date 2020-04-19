@@ -36,6 +36,19 @@ impl TagType {
                 std::mem::swap(s, &mut s2);
                 Some(TagType::date(d1*10+d2, m1*10+m2,y1*1000+y2*100+y3*10+y4))
             },
+            [d1,d2,'-',m1,m2,'-',y1,y2,y3,y4] => {
+                let d1 = d1.to_digit(10)?;
+                let d2 = d2.to_digit(10)?;
+                let m1 = m1.to_digit(10)?;
+                let m2 = m2.to_digit(10)?;
+                let y1 = y1.to_digit(10)?;
+                let y2 = y2.to_digit(10)?;
+                let y3 = y3.to_digit(10)?;
+                let y4 = y4.to_digit(10)?;
+                let mut s2 = s.split_off(10);
+                std::mem::swap(s, &mut s2);
+                Some(TagType::date(d1*10+d2, m1*10+m2,y1*1000+y2*100+y3*10+y4))
+            },
             _ => None,
         }
     }
@@ -71,6 +84,7 @@ impl Tag {
     pub fn from_str(s : &mut String) -> Option<Self> {
         let mut tags : Vec<TagType> = Vec::new();
         loop {
+            println!("{}",s);
             if let Some(t) = TagType::date_from_str(s) {
                 tags.push(t);
             } else if let Some(t) = TagType::number_from_str(s) {
@@ -118,7 +132,6 @@ impl Tag {
             Contains(t) => self.contains(t),
             BeginsWith(t) => self.begins_with(t),
             EndsIn(t) => self.ends_in(t),
-            _ => false,
         }
     }
 
@@ -142,7 +155,7 @@ impl Tag {
         use Tag::*;
         match (self, t) {
             (_, Nil) => true,
-            (Cons(a, b), Cons(c, d)) => (a == c && b == d) || b.ends_in(d),
+            (Cons(a, b), Cons(c, d)) => (a == c && b == d) || b.ends_in(t),
             _ => false,
         }
     }    
