@@ -84,7 +84,6 @@ impl Tag {
     pub fn from_str(s : &mut String) -> Option<Self> {
         let mut tags : Vec<TagType> = Vec::new();
         loop {
-            println!("{}",s);
             if let Some(t) = TagType::date_from_str(s) {
                 tags.push(t);
             } else if let Some(t) = TagType::number_from_str(s) {
