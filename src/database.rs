@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::BTreeSet;
 use std::fs::File;
@@ -14,7 +15,7 @@ use serde::{Serialize, Deserialize};
 /// Representation of the Tag-Database at runtime.
 pub struct DB {
     file : String,
-    db : HashSet<TaggedFile>,
+    db : HashMap<String, TaggedFile>,
 }
 
 
@@ -23,7 +24,7 @@ impl DB {
     pub fn init(file : String) -> Self {
         DB {
             file : file,
-            db : HashSet::new(),
+            db : HashMap::new(),
         }
     }
     /// Reads a database at `file`.
@@ -46,91 +47,72 @@ impl DB {
     /// Tries to match `query` with every TaggedFile.
     /// Returns all paths for files that positively match with the query.
     pub fn match_query(&self, query : &Query) -> HashSet<String> {
-        let mut set = HashSet::new();
-        for tf in self.db.iter() {
-            if tf.match_query(query) {
-                set.insert(tf.get_path());
-            }
-        }
-        return set;
+        self.db
+            .iter()
+            .filter(|(_, tf)| tf.match_query(query))
+            .map(|p| p.0.clone()).collect()
     }
 
     /// Removes TaggedFiles that match `query`.
     pub fn remove_matching(&mut self, query: &Query) {
-        let mut s : HashSet<TaggedFile>= HashSet::new();
-        
-        for tf in self.db.iter() {
-            if tf.match_query(query) {
-                s.insert(tf.clone());
-            }
-        }
-        
-        for tf in s.iter() {
-            self.db.remove(tf);
+        for (p, _) in self.db.clone().iter().filter(|(_, tf)| tf.match_query(query)) {
+            self.db.remove(p);
         }
     }
 
     /// Removes Tags for each TaggedFile.
     /// Removed Tags match `query` positively.
     pub fn remove_matching_tags(&mut self, query: &Query) {
-        let s = self.db.clone();
-        for ts in s {
-            let mut t = self.db.take(&ts).unwrap();
-            t.remove_all_matching(query);
-            self.db.insert(t);
+        for (_p,ts) in self.db.iter_mut() {
+            ts.remove_all_matching(query);
         }
     }
 
     /// Removes Tags for `file`.
     /// Removed Tags match `query` positively.
     pub fn remove_matching_tags_for_file(&mut self, file : &String, query : &Query) {
-     let s = self.db.clone();
-        for ts in s {
-            let mut t = self.db.take(&ts).unwrap();
-            if &t.get_path() == file {
-                t.remove_all_matching(query);
-            }
-            self.db.insert(t);
+        match self.db.remove(file) {
+            None => {
+            },
+            Some(mut tf) => {
+                tf.remove_all_matching(query.clone());
+                self.db.insert(file.to_string(), tf);
+            },
         }
     }
 
     /// Adds `tag` to each TaggedFile that matches `query`.
     pub fn add_tag_matching(&mut self, query : &Query, tag : &Tag) {
-        let mut s : HashSet<TaggedFile>= HashSet::new();
-        
-        for tf in self.db.iter() {
+        for (_p,tf) in self.db.iter_mut() {
             if tf.match_query(query) {
-                s.insert(tf.clone());
+                tf.add_tag(tag.clone());
             }
-        }
-        
-        for tf in s.iter() {
-            let mut t = self.db.take(tf).unwrap();
-            t.add_tag(tag.clone());
-            self.db.insert(t);
         }
     }
 
     /// Adds `tag` to `file.`
     pub fn add_tag_to_file(&mut self, file : String, tag : &Tag) {
-        let s = self.db.clone();
-        for tf in s {
-            let mut t = self.db.take(&tf).unwrap();
-            if t.get_path() == file {
-                t.add_tag(tag.clone());
-            }
-            self.db.insert(t);
+        match self.db.remove(&file) {
+            None => {
+            },
+            Some(mut tf) => {
+                tf.add_tag(tag.clone());
+                self.db.insert(file, tf);
+            },
         }
     }
 
     /// Adds `file` with an empty Tag-Set.
     pub fn add_file(&mut self, file : String) {
-        for tf in self.db.iter() {
-            if tf.get_path() == file {
-                return;
-            }
+        match self.db.get(&file) {
+            None => {
+                self.db.insert(file.clone(), TaggedFile::new(file, BTreeSet::new()));
+            },
+            Some(_) => {
+            },
         }
-        self.db.insert(TaggedFile::new(file, BTreeSet::new()));
+        return;
+
     }   
         
 
