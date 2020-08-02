@@ -47,26 +47,15 @@ impl DB {
     /// Tries to match `query` with every TaggedFile.
     /// Returns all paths for files that positively match with the query.
     pub fn match_query(&self, query : &Query) -> HashSet<String> {
-        let mut set = HashSet::new();
-        for (_,tf) in self.db.iter() {
-            if tf.match_query(query) {
-                set.insert(tf.get_path());
-            }
-        }
-        return set;
+        self.db
+            .iter()
+            .filter(|(_, tf)| tf.match_query(query))
+            .map(|p| p.0.clone()).collect()
     }
 
     /// Removes TaggedFiles that match `query`.
     pub fn remove_matching(&mut self, query: &Query) {
-        let mut s : HashSet<String>= HashSet::new();
-        
-        for (p,tf) in self.db.iter() {
-            if tf.match_query(query) {
-                s.insert(p.clone());
-            }
-        }
-        
-        for p in s.iter() {
+        for (p, _) in self.db.clone().iter().filter(|(_, tf)| tf.match_query(query)) {
             self.db.remove(p);
         }
     }
@@ -74,53 +63,42 @@ impl DB {
     /// Removes Tags for each TaggedFile.
     /// Removed Tags match `query` positively.
     pub fn remove_matching_tags(&mut self, query: &Query) {
-        let s = self.db.clone();
-        for (p,ts) in s {
-            let mut t = self.db.remove(&p).unwrap();
-            t.remove_all_matching(query);
-            self.db.insert(p, t);
+        for (_p,ts) in self.db.iter_mut() {
+            ts.remove_all_matching(query);
         }
     }
 
     /// Removes Tags for `file`.
     /// Removed Tags match `query` positively.
     pub fn remove_matching_tags_for_file(&mut self, file : &String, query : &Query) {
-     let s = self.db.clone();
-        for (p,ts) in s {
-            let mut t = self.db.remove(&p).unwrap();
-            if &t.get_path() == file {
-                t.remove_all_matching(query);
-            }
-            self.db.insert(p, t);
+        match self.db.remove(file) {
+            None => {
+            },
+            Some(mut tf) => {
+                tf.remove_all_matching(query.clone());
+                self.db.insert(file.to_string(), tf);
+            },
         }
     }
 
     /// Adds `tag` to each TaggedFile that matches `query`.
     pub fn add_tag_matching(&mut self, query : &Query, tag : &Tag) {
-        let mut s : HashSet<String>= HashSet::new();
-        
-        for (p,tf) in self.db.iter() {
+        for (_p,tf) in self.db.iter_mut() {
             if tf.match_query(query) {
-                s.insert(p.clone());
+                tf.add_tag(tag.clone());
             }
-        }
-        
-        for p in s.iter() {
-            let mut t = self.db.remove(p).unwrap();
-            t.add_tag(tag.clone());
-            self.db.insert(p.to_string(), t);
         }
     }
 
     /// Adds `tag` to `file.`
     pub fn add_tag_to_file(&mut self, file : String, tag : &Tag) {
-        let s = self.db.clone();
-        for (p,tf) in s {
-            let mut t = self.db.remove(&p).unwrap();
-            if t.get_path() == file {
-                t.add_tag(tag.clone());
-            }
-            self.db.insert(p, t);
+        match self.db.remove(&file) {
+            None => {
+            },
+            Some(mut tf) => {
+                tf.add_tag(tag.clone());
+                self.db.insert(file, tf);
+            },
         }
     }
 
